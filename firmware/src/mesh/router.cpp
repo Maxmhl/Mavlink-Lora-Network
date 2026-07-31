@@ -121,11 +121,13 @@ bool MeshRouter::sendPacket(uint8_t topic, uint16_t dst, const uint8_t *payload,
   uint8_t frame[MESH_MAX_FRAME];
   size_t pos = 0;
 
-  if (Crypto.ready()) {
+  // Management traffic uses the separate admin key (routers hold only that).
+  MeshCrypto &crypto = (topic == TOPIC_ADMIN) ? AdminCrypto : Crypto;
+  if (crypto.ready()) {
     h.ver_flags |= MESH_FLAG_ENCRYPTED;
     pos = meshPackHeader(h, frame);
     uint8_t tag[MESH_TAG_LEN];
-    if (!Crypto.encrypt(h, payload, len, frame + pos, tag)) return false;
+    if (!crypto.encrypt(h, payload, len, frame + pos, tag)) return false;
     pos += len;
     memcpy(frame + pos, tag, MESH_TAG_LEN);
     pos += MESH_TAG_LEN;
@@ -174,18 +176,25 @@ void MeshRouter::handleFrame(const uint8_t *frame, size_t len, float rssi,
   }
 
   // ---- deliver to local applications ----
-  if (cfg_->role == NodeRole::ROUTER) return;  // routers never consume
-  if (!forMe && !(broadcast && (cfg_->rx_topics & topicBit(h.topic)))) return;
+  bool isAdmin = (h.topic == TOPIC_ADMIN);
+  // Routers consume nothing except management traffic addressed to them.
+  if (cfg_->role == NodeRole::ROUTER && !isAdmin) return;
+  bool subscribed = isAdmin || (cfg_->rx_topics & topicBit(h.topic));
+  if (!forMe && !(broadcast && subscribed)) return;
   if (!replayCheck(h.src, h.pkt_id)) return;
 
   const uint8_t *body = frame + MESH_HEADER_LEN;
   size_t bodyLen = len - MESH_HEADER_LEN;
   uint8_t plain[MESH_MAX_PAYLOAD];
 
+  MeshCrypto &crypto = isAdmin ? AdminCrypto : Crypto;
+  lastRssi = rssi;
+  lastSnr = snr;
+
   if (h.encrypted()) {
-    if (bodyLen <= MESH_TAG_LEN || !Crypto.ready()) return;
+    if (bodyLen <= MESH_TAG_LEN || !crypto.ready()) return;
     size_t ctLen = bodyLen - MESH_TAG_LEN;
-    if (!Crypto.decrypt(h, body, ctLen, body + ctLen, plain)) {
+    if (!crypto.decrypt(h, body, ctLen, body + ctLen, plain)) {
       authFailCount++;
       return;
     }

@@ -35,6 +35,7 @@ Trailer:  4 Byte gekürzter AES-GCM-Tag (nur bei Verschlüsselung)
 | 0x02 | `weather` | 10 B binär: int16 T×100 °C, uint16 rF×100 %, uint16 p×0,1 hPa, uint16 Batt mV, uint16 Flags (Bit 0 = simuliert) |
 | 0x03 | `position` | 14 B binär: int32 lat/lon ×1e7, int16 Alt m, uint8 km/h, uint8 Kurs/2° |
 | 0x04 | `status` | reserviert |
+| 0x05 | `admin` | Fernverwaltung (JSON), verschlüsselt mit **separatem Admin-PSK** |
 | 0x10–0x1F | `generic` | opak, anwendungsdefiniert (Typ-Byte-Prinzip = Topic-ID) |
 
 ## 2. Routing: Managed Flooding
@@ -130,4 +131,47 @@ transparent durchgereicht.
 
 Antworten sind einzeilige JSON-Objekte mit `"ok":true/false`; asynchrone
 Ereignisse tragen einen `"evt"`-Schlüssel (`weather`, `position`,
-`generic`), Log-Zeilen beginnen mit `#`.
+`generic`, `admin`), Log-Zeilen beginnen mit `#`.
+
+Zusätzlich für Fernverwaltung über einen USB-Brücken-Node:
+
+```
+{"cmd":"remote","dst":34,"data":{"acmd":"status"}}
+```
+
+## 6. Fernverwaltung (Admin-Topic 0x05)
+
+Jedes Gerät — **auch Router** — führt eine AdminApp aus, die Verwaltungs-
+kommandos über Funk entgegennimmt. Damit Router verwaltbar sind, ohne
+Nutzdaten lesen zu können, wird Admin-Verkehr mit einem **zweiten,
+unabhängigen 16-B-Schlüssel** (Admin-PSK) verschlüsselt — gleiches
+AES-128-GCM-Schema wie in Abschnitt 3, nur anderer Schlüssel:
+
+| Schlüssel | Nodes/Gateways | Router |
+|---|---|---|
+| Daten-PSK (Topics ≠ 0x05) | ✔ | ✘ nie |
+| Admin-PSK (Topic 0x05) | ✔ | ✔ |
+
+**Ablauf:** Das Windows-Tool sendet `{"cmd":"remote","dst":N,"data":{...}}`
+an einen per USB angeschlossenen Node (Funk-Brücke). Dieser verschlüsselt
+das innere JSON mit dem Admin-PSK und flutet es als `TOPIC_ADMIN`-Paket ins
+Mesh. Das Zielgerät antwortet an die Absender-ID; die Brücke reicht die
+Antwort als `{"evt":"admin","src":N,"data":{...}}` an das Tool durch.
+
+**Kommandosatz** (`acmd` im inneren JSON):
+
+| acmd | Adressierung | Wirkung |
+|---|---|---|
+| `ping` | Unicast + **Broadcast** | Discovery: Rolle, FW, Uptime, Akku, RSSI/SNR aus Gerätesicht |
+| `status` | Unicast + Broadcast | wie USB-`status` (Zähler, Airtime, Nachbarn) |
+| `get` | Unicast + Broadcast | Konfiguration lesen (nie Schlüsselmaterial) |
+| `set` | **nur Unicast** | Teil-Update wie USB-`set`, aber `psk`/`admin_psk` werden abgelehnt |
+| `reboot` | **nur Unicast** | Antwort wird gesendet, Neustart ~2,5 s später |
+| `factory` | **nur Unicast** | NVS-Löschung inkl. Schlüssel + Neustart |
+
+**Schutzmechanismen:** GCM-Authentifizierung mit Admin-PSK (kein gültiges
+Kommando ohne Schlüssel fälschbar), Replay-Sliding-Window und Dedup wie bei
+Nutzdaten, Broadcast-Antworten zufällig über 100–1500 ms verteilt
+(Kollisionsvermeidung bei Discovery). Schreibkommandos verlangen Unicast.
+**Bewusste Grenzen:** Schlüssel sind nur per USB setzbar (kein Remote-
+Lockout/Key-Rollover über Funk), kein OTA-Firmware-Update.

@@ -8,7 +8,7 @@ import time
 
 import serial
 
-from .protocol import HANDSHAKE
+from .protocol import BROADCAST, HANDSHAKE
 from .ports import PortInfo
 
 BAUD = 115200
@@ -102,6 +102,64 @@ class ConfigClient:
             self.command({"cmd": "exit"}, timeout=1.0)
         except ConfigError:
             pass
+
+    # -- remote management (via this device as radio bridge) -----------------
+
+    def _read_admin_events(self, deadline: float, on_event) -> None:
+        """Read serial lines until deadline, forwarding {"evt":"admin"} lines
+        (src, data) to on_event. on_event returning True stops early."""
+        while time.monotonic() < deadline:
+            raw = self.ser.readline().decode(errors="replace").strip()
+            if not raw or raw.startswith("#"):
+                continue
+            try:
+                obj = json.loads(raw)
+            except ValueError:
+                continue
+            if obj.get("evt") != "admin":
+                continue
+            if on_event(obj.get("src"), obj.get("data") or {}):
+                return
+
+    def remote(self, dst: int, data: dict, timeout: float = 10.0,
+               retries: int = 3) -> dict:
+        """Send one management command to node `dst` and wait for its reply.
+        Retries on timeout (LoRa is lossy; commands are idempotent)."""
+        last_err = None
+        for _ in range(max(1, retries)):
+            try:
+                self._checked({"cmd": "remote", "dst": dst, "data": data})
+            except ConfigError as e:
+                raise ConfigError(f"Brücken-Node: {e}") from e
+            result: list[dict] = []
+
+            def on_event(src, payload):
+                if src == dst:
+                    result.append(payload)
+                    return True
+                return False
+
+            self._read_admin_events(time.monotonic() + timeout, on_event)
+            if result:
+                return result[0]
+            last_err = ConfigError(
+                f"Keine Antwort von Node 0x{dst:04X} (Timeout)")
+        raise last_err
+
+    def discover(self, duration_s: float = 8.0) -> dict[int, dict]:
+        """Broadcast ping; collect every device that answers within the
+        window. Returns {node_id: ping_response}."""
+        self._checked({"cmd": "remote", "dst": BROADCAST,
+                       "data": {"acmd": "ping"}})
+        found: dict[int, dict] = {}
+
+        def on_event(src, payload):
+            if src is not None:
+                found[src] = payload
+            return False
+
+        self._read_admin_events(time.monotonic() + duration_s, on_event)
+        return found
 
     def _checked(self, cmd: dict) -> dict:
         resp = self.command(cmd)

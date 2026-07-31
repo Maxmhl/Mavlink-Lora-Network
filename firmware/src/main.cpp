@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "apps/admin_app.h"
 #include "apps/generic_app.h"
 #include "apps/mavlink_app.h"
 #include "apps/position_app.h"
@@ -12,7 +13,7 @@
 #include "radio/radio.h"
 #include "variant.h"
 
-static App *apps[5];
+static App *apps[6];
 static size_t nApps = 0;
 static MavlinkApp *mavApp = nullptr;
 static bool isGateway = false;
@@ -32,16 +33,21 @@ void setup() {
 
   Console.begin(isGateway);
 
-  // Routers deliberately never receive the PSK; everyone else needs it for
-  // end-to-end payload encryption.
+  // Routers deliberately never receive the DATA PSK; everyone else needs it
+  // for end-to-end payload encryption. The admin PSK (remote management)
+  // goes to every role — including routers.
   if (c.role != NodeRole::ROUTER && c.has_psk) Crypto.begin(c.psk);
+  if (c.has_admin_psk) AdminCrypto.begin(c.admin_psk);
 
   bool radioOk = LoRaRadio.begin(c);
   Mesh.begin(&Config.cfg);
 
+  // Remote management runs on every role, routers included.
+  addApp(new AdminApp());
+
   switch (c.role) {
     case NodeRole::ROUTER:
-      break;  // forwarding only — no applications, no crypto
+      break;  // forwarding only — no data applications, no data crypto
     case NodeRole::MAVLINK_GATEWAY:
       mavApp = new MavlinkApp(true);
       addApp(mavApp);
@@ -79,6 +85,8 @@ void setup() {
   Console.log(banner);
   if (c.role != NodeRole::ROUTER && !c.has_psk)
     Console.log("WARNING: no PSK set — payloads are NOT encrypted");
+  if (!c.has_admin_psk)
+    Console.log("NOTE: no admin PSK set — remote management disabled");
 }
 
 void loop() {

@@ -11,6 +11,7 @@
 //   {"cmd":"set","role":"router",...}      -> partial update, saved to NVS
 //   {"cmd":"status"}                       -> live status + neighbor table
 //   {"cmd":"send","topic":16,"dst":65535,"hex":"..."}
+//   {"cmd":"remote","dst":N,"data":{"acmd":"ping"|...}}   remote management
 //   {"cmd":"reboot"} / {"cmd":"factory"} / {"cmd":"exit"}
 //
 // Roles NODE/ROUTER: console is always active (log lines start with '#',
@@ -39,6 +40,7 @@ class SerialConsole {
   void cmdSet(JsonObjectConst args, JsonDocument &resp);
   void cmdStatus(JsonDocument &resp);
   void cmdSend(JsonObjectConst args, JsonDocument &resp);
+  void cmdRemote(JsonObjectConst args, JsonDocument &resp);
 
   static constexpr size_t CONSOLE_LINE_MAX = 640;
   char line_[CONSOLE_LINE_MAX];

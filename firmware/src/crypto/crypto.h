@@ -1,11 +1,15 @@
 #pragma once
+#include <mbedtls/gcm.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "../mesh/packet.h"
 
 // End-to-end payload encryption: AES-128-GCM with a network-wide PSK.
-// Routers never hold the key — they forward ciphertext untouched.
+// Routers never hold the DATA key — they forward ciphertext untouched.
+// A second, independent key (admin PSK) protects TOPIC_ADMIN management
+// traffic; routers DO hold that one so they can be managed remotely, while
+// still being unable to read application payloads.
 //
 //   Nonce (12 B) = src (2 B LE) | pkt_id (4 B LE) | 6 x 0x00
 //   AAD          = first 10 header bytes (hop_limit excluded)
@@ -29,7 +33,8 @@ class MeshCrypto {
  private:
   void buildNonce(const MeshHeader &h, uint8_t nonce[12]);
   bool ready_ = false;
-  void *ctx_ = nullptr;  // mbedtls_gcm_context, hidden from the header
+  mbedtls_gcm_context gcm_;
 };
 
-extern MeshCrypto Crypto;
+extern MeshCrypto Crypto;       // data traffic (network PSK)
+extern MeshCrypto AdminCrypto;  // TOPIC_ADMIN traffic (admin PSK)

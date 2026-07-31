@@ -40,6 +40,10 @@ class MeshRouter {
   void onDeliver(DeliverFn fn) { deliver_ = fn; }
 
   const Neighbor *neighbors() const { return neighbors_; }
+  // Link quality of the most recently delivered packet (single-threaded
+  // loop — safe to read from the deliver callback).
+  float lastRssi = 0;
+  float lastSnr = 0;
   uint32_t deliveredCount = 0;
   uint32_t forwardedCount = 0;
   uint32_t dupCount = 0;

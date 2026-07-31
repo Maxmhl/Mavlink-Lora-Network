@@ -30,10 +30,12 @@ python -m loramesh_tool
 
 ## 2. Netzwerk planen
 
-- **Ein PSK pro Netz:** Im Tab „Konfiguration" einmal **Generieren** drücken
-  und denselben Hex-String auf **alle Nodes und Gateways** schreiben —
-  **nicht auf Router** (das Tool blendet das PSK-Feld bei Routern aus).
-  PSK sicher ablegen (Passwortmanager).
+- **Zwei Schlüssel pro Netz** (Tab „Konfiguration", je einmal **Generieren**,
+  sicher ablegen — Passwortmanager):
+  - **Netzwerk-PSK** (Nutzdaten): auf **alle Nodes und Gateways** schreiben —
+    **nicht auf Router** (das Tool sperrt das Feld bei Routern).
+  - **Admin-PSK** (Fernverwaltung): auf **alle Geräte inklusive Router**
+    schreiben. Ohne Admin-PSK ist ein Gerät nicht fernverwaltbar.
 - **Node-IDs:** eindeutig vergeben (z. B. 1 = Gateway, 10+ = Drohnen,
   100+ = Sensoren). Die automatisch aus der MAC abgeleitete ID kann
   übernommen werden.
@@ -74,6 +76,24 @@ Router hoch, `Auth-Fehler` > 0 deutet auf uneinheitliche PSKs hin.
 (Der Monitor pausiert bei einem Gateway den MAVLink-Passthrough —
 vor GCS-Nutzung Monitor stoppen.)
 
+## 4b. Fernverwaltung (Tab „Fernverwaltung")
+
+Ein beliebiger per USB angeschlossener Node mit Admin-PSK dient als
+**Funk-Brücke** — damit lassen sich alle Geräte im Mesh (auch die
+solarbetriebenen Router auf dem Dach) aus der Ferne verwalten:
+
+1. USB-Node wählen → **Brücken-Node verbinden**.
+2. **Netzwerk scannen**: Broadcast-Ping; alle Geräte mit Admin-PSK antworten
+   (Node-ID, Rolle, FW, Empfangsqualität aus Gerätesicht, Uptime, Akku).
+3. Gerät in der Tabelle auswählen → **Status**, **Konfig lesen**,
+   **Konfig ändern…** (Funkparameter mit EU868-Prüfung; Gerät startet danach
+   automatisch neu), **Neustart** oder **Werksreset** (Bestätigung nötig).
+
+**Achtung:** Falsch gesetzte Funkparameter (Frequenz/SF/Sync) trennen das
+Gerät vom Netz — danach hilft nur USB vor Ort. Schlüssel (PSK/Admin-PSK)
+sind aus Sicherheitsgründen **nicht** über Funk änderbar, ein Werksreset
+löscht sie mit.
+
 ## 5. Mission Planner / QGroundControl anbinden
 
 1. Gateway (T-Beam 1W, Rolle `mavlink_gateway`) per USB an den PC.
@@ -100,3 +120,4 @@ vor GCS-Nutzung Monitor stoppen.)
 | `Auth-Fehler` steigt | PSK ungleich zwischen den Nodes |
 | MAVLink verbindet nicht | Peer-Node-ID falsch; FC-Baud ≠ `mav_baud`; RX/TX vertauscht; auf dem Gateway `rx_topics` manuell überschrieben |
 | Telemetrie stockt / `tx_drop_duty` steigt | Duty-Cycle-Budget erschöpft — `SRx_*`-Raten senken, ggf. SF7/250 kHz |
+| Gerät antwortet nicht auf Scan/Fernzugriff | Admin-PSK fehlt oder ungleich; Gerät außer Reichweite (Hop-Limit prüfen); Brücken-Node ohne Admin-PSK |

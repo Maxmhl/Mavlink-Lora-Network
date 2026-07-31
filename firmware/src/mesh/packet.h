@@ -53,6 +53,7 @@ enum Topic : uint8_t {
   TOPIC_WEATHER = 0x02,
   TOPIC_POSITION = 0x03,
   TOPIC_STATUS = 0x04,
+  TOPIC_ADMIN = 0x05,  // remote management; encrypted with the ADMIN psk
   TOPIC_GENERIC_BASE = 0x10,  // 0x10..0x1F free for user-defined payloads
 };
 

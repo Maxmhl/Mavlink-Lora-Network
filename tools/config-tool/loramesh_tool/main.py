@@ -11,6 +11,7 @@ from .config_tab import ConfigTab
 from .flash_tab import FlashTab
 from .gateway_tab import GatewayTab
 from .monitor_tab import MonitorTab
+from .remote_tab import RemoteTab
 
 
 class MainWindow(QMainWindow):
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(ConfigTab(), "2. Konfiguration")
         tabs.addTab(MonitorTab(), "3. Monitor")
         tabs.addTab(GatewayTab(), "4. MAVLink-Gateway")
+        tabs.addTab(RemoteTab(), "5. Fernverwaltung")
         self.setCentralWidget(tabs)
 
 

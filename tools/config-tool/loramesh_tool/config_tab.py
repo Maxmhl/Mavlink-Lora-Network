@@ -111,19 +111,37 @@ class ConfigTab(QWidget):
         g_mav = QGroupBox("MAVLink")
         g_mav.setLayout(mav)
 
-        # --- PSK ---
+        # --- PSK / Admin-PSK ---
         self.psk = QLineEdit()
         self.psk.setPlaceholderText("32 Hex-Zeichen — leer lassen = unverändert")
         self.psk.setMaxLength(32)
-        btn_gen = QPushButton("Generieren")
-        btn_gen.clicked.connect(lambda: self.psk.setText(protocol.generate_psk()))
+        self.btn_psk_gen = QPushButton("Generieren")
+        self.btn_psk_gen.clicked.connect(
+            lambda: self.psk.setText(protocol.generate_psk()))
         psk_row = QHBoxLayout()
         psk_row.addWidget(self.psk, 1)
-        psk_row.addWidget(btn_gen)
+        psk_row.addWidget(self.btn_psk_gen)
         self.psk_state = QLabel("")
+
+        # Second key for remote management (TOPIC_ADMIN) — every role gets
+        # this one, including routers (which never get the data PSK).
+        self.admin_psk = QLineEdit()
+        self.admin_psk.setPlaceholderText(
+            "32 Hex-Zeichen — leer lassen = unverändert")
+        self.admin_psk.setMaxLength(32)
+        btn_agen = QPushButton("Generieren")
+        btn_agen.clicked.connect(
+            lambda: self.admin_psk.setText(protocol.generate_psk()))
+        apsk_row = QHBoxLayout()
+        apsk_row.addWidget(self.admin_psk, 1)
+        apsk_row.addWidget(btn_agen)
+        self.admin_psk_state = QLabel("")
+
         psk_form = QFormLayout()
         psk_form.addRow("Netzwerk-PSK:", psk_row)
         psk_form.addRow("", self.psk_state)
+        psk_form.addRow("Admin-PSK (Fernverwaltung):", apsk_row)
+        psk_form.addRow("", self.admin_psk_state)
         self.g_psk = QGroupBox("Verschlüsselung (AES-128-GCM, Ende-zu-Ende)")
         self.g_psk.setLayout(psk_form)
 
@@ -157,9 +175,11 @@ class ConfigTab(QWidget):
             w.setEnabled(on)
 
     def _role_changed(self, role: str):
-        # Routers forward ciphertext only — they must not get the PSK.
+        # Routers forward ciphertext only — they must not get the data PSK.
+        # The admin PSK stays available on every role (remote management).
         is_router = role == "router"
-        self.g_psk.setEnabled(not is_router)
+        self.psk.setEnabled(not is_router)
+        self.btn_psk_gen.setEnabled(not is_router)
         if is_router:
             self.psk.clear()
 
@@ -229,6 +249,10 @@ class ConfigTab(QWidget):
         self.psk_state.setText(
             "PSK gesetzt ✔" if cfg.get("has_psk") else
             "KEIN PSK gesetzt — Payloads unverschlüsselt!")
+        self.admin_psk.clear()
+        self.admin_psk_state.setText(
+            "Admin-PSK gesetzt ✔" if cfg.get("has_admin_psk") else
+            "Kein Admin-PSK — Gerät ist nicht fernverwaltbar.")
         self._set_connected(True)
 
     def _collect(self) -> dict:
@@ -259,16 +283,22 @@ class ConfigTab(QWidget):
         psk = self.psk.text().strip().lower()
         if psk and self.role.currentText() != "router":
             values["psk"] = psk
+        admin_psk = self.admin_psk.text().strip().lower()
+        if admin_psk:
+            values["admin_psk"] = admin_psk
         return values
 
     def _write(self):
         if not self._phy_ok:
             QMessageBox.warning(self, "EU868", self.phy_check.text())
             return
-        psk = self.psk.text().strip()
-        if psk and (len(psk) != 32 or any(c not in "0123456789abcdefABCDEF" for c in psk)):
-            QMessageBox.warning(self, "PSK", "PSK muss genau 32 Hex-Zeichen haben.")
-            return
+        for label, text in (("PSK", self.psk.text().strip()),
+                            ("Admin-PSK", self.admin_psk.text().strip())):
+            if text and (len(text) != 32 or
+                         any(c not in "0123456789abcdefABCDEF" for c in text)):
+                QMessageBox.warning(
+                    self, label, f"{label} muss genau 32 Hex-Zeichen haben.")
+                return
         port = self.ports.port()
         values = self._collect()
 

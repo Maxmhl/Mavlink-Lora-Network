@@ -40,6 +40,10 @@ die Rolle wird per Konfiguration (NVS) über das Windows-Tool gesetzt.
 - **EU868-Konformität:** Subband-Tabelle mit Duty-Cycle-Token-Bucket in der
   Firmware und Live-Validierung im Tool. Default 869,525 MHz (10 %-Subband,
   bis 27 dBm ERP). Details: [docs/funkparameter.md](docs/funkparameter.md)
+- **Fernverwaltung:** Ein USB-Node dient als Funk-Brücke — Discovery per
+  Broadcast-Ping, Status/Konfiguration/Neustart/Werksreset aller Geräte über
+  das Mesh. Verwaltungsverkehr nutzt einen **separaten Admin-PSK**, den auch
+  Router erhalten (Nutzdaten bleiben für Router unlesbar).
 
 ## Repository
 

@@ -60,6 +60,9 @@ void ConfigStore::load() {
   cfg.relay = prefs.getBool("relay", false);
 
   cfg.has_psk = prefs.getBytes("psk", cfg.psk, sizeof(cfg.psk)) == sizeof(cfg.psk);
+  cfg.has_admin_psk =
+      prefs.getBytes("apsk", cfg.admin_psk, sizeof(cfg.admin_psk)) ==
+      sizeof(cfg.admin_psk);
 
   cfg.tx_topics = prefs.getULong("txtopics", 0);
   cfg.rx_topics = prefs.getULong("rxtopics", 0);
@@ -94,6 +97,8 @@ void ConfigStore::save() {
   prefs.putUChar("hops", cfg.hop_limit);
   prefs.putBool("relay", cfg.relay);
   if (cfg.has_psk) prefs.putBytes("psk", cfg.psk, sizeof(cfg.psk));
+  if (cfg.has_admin_psk)
+    prefs.putBytes("apsk", cfg.admin_psk, sizeof(cfg.admin_psk));
   prefs.putULong("txtopics", cfg.tx_topics);
   prefs.putULong("rxtopics", cfg.rx_topics);
   prefs.putUShort("mavpeer", cfg.mav_peer);

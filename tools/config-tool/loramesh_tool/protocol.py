@@ -25,8 +25,13 @@ TOPICS = {
     "weather": 0x02,
     "position": 0x03,
     "status": 0x04,
+    "admin": 0x05,
     "generic": 0x10,
 }
+
+# Remote-management commands (TOPIC_ADMIN payload, {"acmd": ...}).
+# set/reboot/factory require unicast; keys are never settable remotely.
+ADMIN_COMMANDS = ("ping", "status", "get", "set", "reboot", "factory")
 
 
 def topic_bit(topic_id: int) -> int:

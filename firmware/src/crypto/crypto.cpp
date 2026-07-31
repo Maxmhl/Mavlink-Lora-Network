@@ -1,18 +1,15 @@
 #include "crypto.h"
 
-#include <mbedtls/gcm.h>
 #include <string.h>
 
 MeshCrypto Crypto;
-
-static mbedtls_gcm_context gcm;
+MeshCrypto AdminCrypto;
 
 bool MeshCrypto::begin(const uint8_t psk[16]) {
-  if (ready_) mbedtls_gcm_free(&gcm);
-  mbedtls_gcm_init(&gcm);
-  int rc = mbedtls_gcm_setkey(&gcm, MBEDTLS_CIPHER_ID_AES, psk, 128);
+  if (ready_) mbedtls_gcm_free(&gcm_);
+  mbedtls_gcm_init(&gcm_);
+  int rc = mbedtls_gcm_setkey(&gcm_, MBEDTLS_CIPHER_ID_AES, psk, 128);
   ready_ = (rc == 0);
-  ctx_ = &gcm;
   return ready_;
 }
 
@@ -33,7 +30,7 @@ bool MeshCrypto::encrypt(const MeshHeader &h, const uint8_t *in, size_t len,
   uint8_t aad[MESH_AAD_LEN + 1];
   buildNonce(h, nonce);
   meshPackHeader(h, aad);  // packs 11 B; only the first 10 are used as AAD
-  int rc = mbedtls_gcm_crypt_and_tag(&gcm, MBEDTLS_GCM_ENCRYPT, len, nonce, 12,
+  int rc = mbedtls_gcm_crypt_and_tag(&gcm_, MBEDTLS_GCM_ENCRYPT, len, nonce, 12,
                                      aad, MESH_AAD_LEN, in, out, MESH_TAG_LEN,
                                      tag);
   return rc == 0;
@@ -46,7 +43,7 @@ bool MeshCrypto::decrypt(const MeshHeader &h, const uint8_t *in, size_t len,
   uint8_t aad[MESH_AAD_LEN + 1];
   buildNonce(h, nonce);
   meshPackHeader(h, aad);
-  int rc = mbedtls_gcm_auth_decrypt(&gcm, len, nonce, 12, aad, MESH_AAD_LEN,
+  int rc = mbedtls_gcm_auth_decrypt(&gcm_, len, nonce, 12, aad, MESH_AAD_LEN,
                                     tag, MESH_TAG_LEN, in, out);
   return rc == 0;
 }

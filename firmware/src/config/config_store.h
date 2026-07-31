@@ -32,6 +32,10 @@ struct NodeConfig {
   // Crypto
   uint8_t psk[16] = {0};
   bool has_psk = false;
+  // Separate key for TOPIC_ADMIN remote management — routers get this one
+  // (and only this one) so they can be managed over the air.
+  uint8_t admin_psk[16] = {0};
+  bool has_admin_psk = false;
 
   // Topics (bitmasks, bit = topic id)
   uint32_t tx_topics = 0;
