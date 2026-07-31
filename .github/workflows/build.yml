@@ -1,0 +1,118 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  windows-exe:
+    name: Windows-Tool (.exe)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: tools/config-tool
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tools/config-tool/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+          pip install pyinstaller
+
+      - name: Run tests
+        run: pytest tests/ -q
+
+      - name: Build executable
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --name LoRaMeshKonfigurator
+          --collect-data esptool
+          --collect-submodules esptool
+          app.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoRaMeshKonfigurator-windows
+          path: tools/config-tool/dist/LoRaMeshKonfigurator.exe
+          if-no-files-found: error
+
+  firmware:
+    name: Firmware-Images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build all environments
+        working-directory: firmware
+        run: pio run -e heltec_v3 -e tbeam_1w -e tbeam_v12 -e sensecap_p1
+
+      - name: Collect merged images
+        run: |
+          mkdir -p out
+          for env in heltec_v3 tbeam_1w tbeam_v12 sensecap_p1; do
+            cp "firmware/.pio/build/$env/firmware-merged.bin" "out/firmware-merged-$env.bin"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-images
+          path: out/*.bin
+          if-no-files-found: error
+
+  release:
+    name: GitHub-Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows-exe, firmware]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/LoRaMeshKonfigurator.exe
+            artifacts/*.bin
+          body: |
+            ## LoRa-Mesh Konfigurator ${{ github.ref_name }}
+
+            **Download:** `LoRaMeshKonfigurator.exe` herunterladen und starten —
+            keine Installation nötig. (Windows SmartScreen beim ersten Start:
+            „Weitere Informationen“ → „Trotzdem ausführen“ — die exe ist nicht
+            code-signiert.)
+
+            Die Firmware-Images (`firmware-merged-<board>.bin`) werden im Tab
+            **Flashen** bei Offset 0x0 auf die Geräte geschrieben:
+            - `heltec_v3` — Heltec WiFi LoRa 32 V3
+            - `tbeam_1w` — LilyGo T-Beam 1W (ESP32-S3)
+            - `tbeam_v12` — LilyGo T-Beam v1.1/v1.2
+            - `sensecap_p1` — Seeed SenseCAP Solar Node P1
+
+            Anleitung: `docs/inbetriebnahme.md` im Repository.

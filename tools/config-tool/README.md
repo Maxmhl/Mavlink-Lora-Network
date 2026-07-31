@@ -2,7 +2,17 @@
 
 Desktop-Tool (Python + PySide6) zum Flashen und Konfigurieren der Mesh-Geräte.
 
-## Installation
+## Fertige .exe herunterladen
+
+Die einfachste Variante: `LoRaMeshKonfigurator.exe` von der
+[Releases-Seite](https://github.com/Maxmhl/Mavlink-Lora-Network/releases)
+herunterladen und starten — keine Python-Installation nötig. Die exe wird
+vom GitHub-Actions-Workflow (`.github/workflows/build.yml`) mit PyInstaller
+auf einem Windows-Runner gebaut. Beim ersten Start meldet sich ggf.
+SmartScreen („Weitere Informationen“ → „Trotzdem ausführen“), da die Datei
+nicht code-signiert ist.
+
+## Installation aus dem Quellcode
 
 ```bash
 cd tools/config-tool

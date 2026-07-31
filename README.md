@@ -55,6 +55,17 @@ tools/config-tool/   Windows-Tool (Python + PySide6 + esptool)
 docs/                Inbetriebnahme, Protokoll, Funkparameter
 ```
 
+## Download (ohne Python/PlatformIO)
+
+Unter **[Releases](https://github.com/Maxmhl/Mavlink-Lora-Network/releases)**
+liegen fertige Downloads (per GitHub Actions gebaut):
+
+- `LoRaMeshKonfigurator.exe` — das Windows-Tool, einfach starten, keine
+  Installation. (SmartScreen-Warnung beim ersten Start: „Weitere
+  Informationen“ → „Trotzdem ausführen“ — die exe ist nicht code-signiert.)
+- `firmware-merged-<board>.bin` — die vier Firmware-Images, direkt im Tab
+  „Flashen“ verwendbar.
+
 ## Schnellstart
 
 ```bash
