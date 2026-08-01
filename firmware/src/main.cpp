@@ -34,13 +34,22 @@ void setup() {
 
   Console.begin(isGateway);
 
+  // Early boot-stage markers: if a later init step crashes, the serial
+  // monitor shows how far the boot got (and why the chip last reset).
+  char stage[48];
+  snprintf(stage, sizeof(stage), "boot: reset_reason=%d",
+           (int)esp_reset_reason());
+  Console.log(stage);
+
   // Routers deliberately never receive the DATA PSK; everyone else needs it
   // for end-to-end payload encryption. The admin PSK (remote management)
   // goes to every role — including routers.
   if (c.role != NodeRole::ROUTER && c.has_psk) Crypto.begin(c.psk);
   if (c.has_admin_psk) AdminCrypto.begin(c.admin_psk);
 
+  Console.log("boot: board+config ok, starting radio");
   bool radioOk = LoRaRadio.begin(c);
+  Console.log(radioOk ? "boot: radio ok" : "boot: radio FAILED");
   Mesh.begin(&Config.cfg);
 
   // Remote management runs on every role, routers included.
