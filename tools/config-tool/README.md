@@ -40,7 +40,11 @@ pyinstaller --noconsole --name LoRaMeshKonfigurator -p . loramesh_tool/__main__.
    Airtime-Budget, Paketzähler.
 4. **MAVLink-Gateway** — identifiziert alle angeschlossenen CLMESH-Geräte und
    zeigt den COM-Port des Gateways für Mission Planner / QGroundControl an.
-5. **Fernverwaltung** — ein USB-Node als Funk-Brücke: Netzwerk-Discovery
+3. **Serial-Monitor** — Live-Ausgabe des Geräts (Bootbanner, Logs,
+   JSON-Events, 30-s-Heartbeat) mit Zeitstempeln, Einfärbung, Log-Export und
+   Eingabezeile für Kommandos — zum Prüfen, ob die Firmware korrekt läuft.
+   (Die weiteren Tabs verschieben sich entsprechend auf 4–6.)
+6. **Fernverwaltung** — ein USB-Node als Funk-Brücke: Netzwerk-Discovery
    (Broadcast-Ping), Status, Konfiguration lesen/ändern (mit EU868-Prüfung),
    Neustart und Werksreset entfernter Geräte — auch der Router. Benötigt den
    Admin-PSK auf Brücke und Zielgerät.

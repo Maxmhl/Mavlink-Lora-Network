@@ -12,6 +12,7 @@ from .flash_tab import FlashTab
 from .gateway_tab import GatewayTab
 from .monitor_tab import MonitorTab
 from .remote_tab import RemoteTab
+from .serial_tab import SerialTab
 
 
 class MainWindow(QMainWindow):
@@ -23,9 +24,10 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.addTab(FlashTab(), "1. Flashen")
         tabs.addTab(ConfigTab(), "2. Konfiguration")
-        tabs.addTab(MonitorTab(), "3. Monitor")
-        tabs.addTab(GatewayTab(), "4. MAVLink-Gateway")
-        tabs.addTab(RemoteTab(), "5. Fernverwaltung")
+        tabs.addTab(SerialTab(), "3. Serial-Monitor")
+        tabs.addTab(MonitorTab(), "4. Netzwerk-Monitor")
+        tabs.addTab(GatewayTab(), "5. MAVLink-Gateway")
+        tabs.addTab(RemoteTab(), "6. Fernverwaltung")
         self.setCentralWidget(tabs)
 
 

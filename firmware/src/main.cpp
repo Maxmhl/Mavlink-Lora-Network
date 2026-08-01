@@ -9,6 +9,7 @@
 #include "config/config_store.h"
 #include "console/serial_console.h"
 #include "crypto/crypto.h"
+#include "display/display_ui.h"
 #include "mesh/router.h"
 #include "radio/radio.h"
 #include "variant.h"
@@ -77,6 +78,10 @@ void setup() {
 
   for (size_t i = 0; i < nApps; i++) apps[i]->begin();
 
+#if HAS_DISPLAY
+  Display.begin();
+#endif
+
   char banner[128];
   snprintf(banner, sizeof(banner),
            "CLMESH %s %s role=%s id=0x%04X freq=%.3f sf=%u radio=%s(%d)",
@@ -101,6 +106,10 @@ void loop() {
     apps[i]->loop();
   }
 
+#if HAS_DISPLAY
+  Display.loop();
+#endif
+
   // Heartbeat: routers blink slowly, nodes on activity.
   static uint32_t lastBlink = 0;
   static bool led = false;
@@ -108,5 +117,19 @@ void loop() {
     lastBlink = millis();
     led = !led;
     boardSetLed(led);
+  }
+
+  // Periodic liveness line for the serial monitor (suppressed on gateways
+  // in passthrough mode by Console.log itself).
+  static uint32_t lastHb = 0;
+  if (millis() - lastHb > 30000) {
+    lastHb = millis();
+    char hb[96];
+    snprintf(hb, sizeof(hb), "HB up=%lus tx=%lu rx=%lu fwd=%lu air=%.1f%%",
+             (unsigned long)(millis() / 1000), (unsigned long)LoRaRadio.txCount,
+             (unsigned long)LoRaRadio.rxCount,
+             (unsigned long)Mesh.forwardedCount,
+             LoRaRadio.duty.usagePercent());
+    Console.log(hb);
   }
 }

@@ -26,5 +26,11 @@
 #define PIN_LED 4
 #define LED_ACTIVE_LOW 1
 
+#define HAS_DISPLAY 1
+#define DISPLAY_SSD1306 1
+#define OLED_SDA 21  // shared I2C bus with the PMU
+#define OLED_SCL 22
+#define BUTTON_PIN 38
+
 #define MAV_UART_TX_DEFAULT 14
 #define MAV_UART_RX_DEFAULT 13

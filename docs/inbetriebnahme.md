@@ -76,6 +76,38 @@ Router hoch, `Auth-Fehler` > 0 deutet auf uneinheitliche PSKs hin.
 (Der Monitor pausiert bei einem Gateway den MAVLink-Passthrough —
 vor GCS-Nutzung Monitor stoppen.)
 
+## 4a. Funktionstest per Serial-Monitor (Tab „Serial-Monitor")
+
+Gerät per USB anschließen, Port wählen, **Verbinden** — beim Öffnen startet
+das Gerät meist neu und der Bootbanner erscheint sofort:
+
+```
+# CLMESH 1.1.0 heltec_v3 role=node id=0x1A2B freq=869.525 sf=7 radio=ok(0)
+```
+
+- `radio=ok(0)` bestätigt, dass der SX1262 initialisiert wurde
+  (`FAIL(<code>)` = Hardware-/Variantenproblem).
+- Alle 30 s kommt eine Lebenszeile `# HB up=…s tx=… rx=… fwd=… air=…%`.
+- Empfangene Pakete erscheinen als JSON-Events (`{"evt":"weather",…}`).
+- Über die Eingabezeile lassen sich Kommandos senden (z. B.
+  `{"cmd":"status"}`); der Button „Konfigmodus" schickt den Handshake
+  (nötig beim Gateway innerhalb der ersten 2 s nach Reset).
+
+## 4c. Display-Bedienung am Gerät (Heltec V3, T-Beam)
+
+Heltec V3 und T-Beam haben ein OLED mit Ein-Tasten-Bedienung
+(Heltec: PRG-Taste, T-Beam v1.2: mittlere Taste, T-Beam 1W: BOOT-Taste):
+
+- **Kurz drücken:** blättert durch die Seiten *Übersicht* (Rolle, Node-ID,
+  Uptime, Akku), *Funk* (Frequenz/SF, Airtime, TX/RX) und *Netzwerk*
+  (gehörte Nachbarn mit RSSI).
+- **Lang drücken (≥ 1 s):** öffnet das Menü **Aktionen** — kurz drücken
+  wählt *Neustart* / *Ausschalten* / *Zurück*, lang drücken führt aus.
+- **Ausschalten:** T-Beam schaltet über die PMU wirklich ab (Aufwecken mit
+  der PWR-Taste). Der Heltec V3 hat keine PMU — er geht in Deep-Sleep
+  (Menüpunkt „Schlafen"), die PRG-Taste weckt ihn wieder.
+- Das Display schaltet nach 60 s ab; ein beliebiger Tastendruck weckt es.
+
 ## 4b. Fernverwaltung (Tab „Fernverwaltung")
 
 Ein beliebiger per USB angeschlossener Node mit Admin-PSK dient als
@@ -121,3 +153,5 @@ löscht sie mit.
 | MAVLink verbindet nicht | Peer-Node-ID falsch; FC-Baud ≠ `mav_baud`; RX/TX vertauscht; auf dem Gateway `rx_topics` manuell überschrieben |
 | Telemetrie stockt / `tx_drop_duty` steigt | Duty-Cycle-Budget erschöpft — `SRx_*`-Raten senken, ggf. SF7/250 kHz |
 | Gerät antwortet nicht auf Scan/Fernzugriff | Admin-PSK fehlt oder ungleich; Gerät außer Reichweite (Hop-Limit prüfen); Brücken-Node ohne Admin-PSK |
+| Unklar, ob die Firmware läuft | Tab „Serial-Monitor": Bootbanner mit `radio=ok` + HB-Zeilen alle 30 s prüfen |
+| Display bleibt dunkel | Taste kurz drücken (60-s-Timeout); Heltec: Firmware < v1.1.0 schaltet Vext nicht ein — aktualisieren |

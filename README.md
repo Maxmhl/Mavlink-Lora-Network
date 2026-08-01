@@ -44,6 +44,12 @@ die Rolle wird per Konfiguration (NVS) über das Windows-Tool gesetzt.
   Broadcast-Ping, Status/Konfiguration/Neustart/Werksreset aller Geräte über
   das Mesh. Verwaltungsverkehr nutzt einen **separaten Admin-PSK**, den auch
   Router erhalten (Nutzdaten bleiben für Router unlesbar).
+- **OLED-Bedienung am Gerät:** Heltec V3 und T-Beam zeigen Statusseiten
+  (Übersicht/Funk/Netzwerk) auf dem Display; per Ein-Tasten-Menü lassen sich
+  Nodes direkt neu starten oder ausschalten (T-Beam: PMU-Shutdown, Heltec:
+  Deep-Sleep mit Tastenweckung).
+- **Serial-Monitor im Tool:** Live-Log jedes per USB angeschlossenen Geräts
+  (Bootbanner, Heartbeat, Events) zur Funktionskontrolle.
 
 ## Repository
 

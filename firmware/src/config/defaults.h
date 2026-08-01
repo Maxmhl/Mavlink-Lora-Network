@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.1.0"
 
 // EU868 defaults: 869.525 MHz sits in the 869.4–869.65 MHz sub-band
 // (10 % duty cycle, up to 500 mW / 27 dBm ERP) — the best fit for

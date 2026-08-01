@@ -70,6 +70,14 @@ size_t Radio::receive(uint8_t *buf, size_t maxlen, float *rssi, float *snr) {
   return len;
 }
 
+void Radio::sleep() {
+  if (lora_) lora_->sleep();
+#ifdef PIN_RADIO_LDO_EN
+  digitalWrite(PIN_RADIO_LDO_EN, LOW);  // cut power to the PA module
+#endif
+  ok_ = false;
+}
+
 uint32_t Radio::airtimeMs(size_t len) {
   if (!ok_) return 0;
   return (uint32_t)(lora_->getTimeOnAir(len) / 1000);

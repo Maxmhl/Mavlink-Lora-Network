@@ -22,3 +22,6 @@
 #ifndef LED_ACTIVE_LOW
 #define LED_ACTIVE_LOW 0
 #endif
+#ifndef HAS_DISPLAY
+#define HAS_DISPLAY 0
+#endif

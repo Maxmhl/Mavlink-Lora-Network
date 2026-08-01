@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <esp_sleep.h>
 
+#include "../radio/radio.h"
 #include "board.h"
 #include "variant.h"
 
@@ -53,10 +55,34 @@ void boardInit() {
 #endif
 #ifdef PIN_VEXT
   pinMode(PIN_VEXT, OUTPUT);
-  digitalWrite(PIN_VEXT, HIGH);  // Vext off (active low) — nothing attached
+#if HAS_DISPLAY
+  digitalWrite(PIN_VEXT, LOW);  // Vext on (active low) — powers the OLED
+#else
+  digitalWrite(PIN_VEXT, HIGH);  // Vext off — nothing attached
+#endif
+#endif
+#if HAS_DISPLAY && defined(OLED_RST)
+  pinMode(OLED_RST, OUTPUT);
+  digitalWrite(OLED_RST, LOW);
+  delay(20);
+  digitalWrite(OLED_RST, HIGH);
 #endif
 
   delay(50);  // let rails settle before touching the radio
+}
+
+void boardShutdown() {
+  LoRaRadio.sleep();
+  boardSetLed(false);
+#if HAS_PMU
+  if (haveAxp2101) axp2101.shutdown();
+  if (haveAxp192) axp192.shutdown();
+#endif
+  // No PMU (or shutdown fell through): deep sleep, user button wakes us.
+#ifdef BUTTON_PIN
+  esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN, 0);
+#endif
+  esp_deep_sleep_start();
 }
 
 void boardSetLed(bool on) {

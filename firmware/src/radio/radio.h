@@ -15,6 +15,8 @@ class Radio {
   bool send(const uint8_t *data, size_t len);
 
   uint32_t airtimeMs(size_t len);
+  // Put the SX1262 into sleep mode (used before device shutdown/deep sleep).
+  void sleep();
   DutyCycle duty;
   uint32_t txCount = 0;
   uint32_t rxCount = 0;

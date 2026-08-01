@@ -14,7 +14,14 @@
 #define LORA_DIO2_AS_RF_SWITCH 1
 
 #define PIN_LED 35
-#define PIN_VEXT 36  // active LOW: powers external rail (OLED etc.), unused here
+#define PIN_VEXT 36  // active LOW: powers the OLED rail
+
+#define HAS_DISPLAY 1
+#define DISPLAY_SSD1306 1
+#define OLED_SDA 17
+#define OLED_SCL 18
+#define OLED_RST 21
+#define BUTTON_PIN 0  // PRG button; also deep-sleep wakeup ("power on")
 
 // Default UART pins for the flight-controller link (node role), configurable
 #define MAV_UART_TX_DEFAULT 45

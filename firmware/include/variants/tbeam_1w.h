@@ -31,5 +31,11 @@
 
 #define PIN_LED 18
 
+#define HAS_DISPLAY 1
+#define DISPLAY_SH1106 1  // 1.3" SH1106 panel
+#define OLED_SDA 8  // shared I2C bus with the AXP2101
+#define OLED_SCL 9
+#define BUTTON_PIN 0
+
 #define MAV_UART_TX_DEFAULT 43
 #define MAV_UART_RX_DEFAULT 44
